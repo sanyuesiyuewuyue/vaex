@@ -103,6 +103,20 @@ class DataFrameAccessorML(object):
         return minmax_scaler
 
 
+    def groupby_transformer(self, by, agg, rprefix='', rsuffix=''):
+        '''Requires vaex.ml: Create :class:`vaex.ml.transformations.GroupByTransformer` and fit it.
+
+        :param by: The feature on which to do the grouping.
+        :param agg: Dict where the keys are feature names and the values are vaex.agg objects.
+        :param rprefix: Prefix for the names of the aggregate features in case of a collision.
+        :param rsuffix: Suffix for the names of the aggregate features in case of a collision.
+        :return vaex.ml.transformations.GroupByTransformer: Fitted GroupByTransformer.
+        '''
+
+        group_trans = GroupByTransformer(by=by, agg=agg, rprefix=rprefix, rsuffix=rsuffix)
+        group_trans.fit(self.df)
+        return group_trans
+
     def xgboost_model(self, target, num_boost_round, features=None, params={}, prediction_name='xgboost_prediction'):
         '''Requires vaex.ml: create a XGBoost model and train/fit it.
 
@@ -222,3 +236,4 @@ class DataFrameAccessorML(object):
 from .transformations import PCA
 from .transformations import StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler
 from .transformations import LabelEncoder, OneHotEncoder, FrequencyEncoder
+from .transformations import GroupByTransformer

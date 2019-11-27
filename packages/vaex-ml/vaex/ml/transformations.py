@@ -573,3 +573,65 @@ class RobustScaler(Transformer):
                 expr = expr / self.scale_[i]
             copy[name] = expr
         return copy
+
+
+@register
+@generate.register
+class GroupByTransformer(Transformer):
+    '''The GroupByTransformer creates aggregations via the groupby operation, which are
+    joined to a DataFrame. This is useful for creating aggregate features.
+
+    Example:
+
+    >>> import vaex
+    >>> import vaex.ml
+    >>> df_train = vaex.from_arrays(x=['dog', 'dog', 'dog', 'cat', 'cat'], y=[2, 3, 4, 10, 20])
+    >>> df_test = vaex.from_arrays(x=['dog', 'cat', 'dog', 'mouse'], y=[5, 5, 5, 5])
+    >>> group_trans = vaex.ml.GroupByTransformer(by='x', agg={'mean_y': vaex.agg.mean('y')}, rsuffix='_agg')
+    >>> group_trans.fit_transform(df_train)
+      #  x      y  x_agg      mean_y
+      0  dog    2  dog             3
+      1  dog    3  dog             3
+      2  dog    4  dog             3
+      3  cat   10  cat            15
+      4  cat   20  cat            15
+    >>> group_trans.transform(df_test)
+      #  x        y  x_agg    mean_y
+      0  dog      5  dog      3.0
+      1  cat      5  cat      15.0
+      2  dog      5  dog      3.0
+      3  mouse    5  --       --
+    '''
+
+    by = traitlets.Unicode(allow_none=False, help='The feature on which to do the grouping.')
+    agg = traitlets.Dict(help='Dict where the keys are feature names and the values are vaex.agg objects.')
+    rprefix = traitlets.Unicode(default_value='', help='Prefix for the names of the aggregate features in case of a collision.')
+    rsuffix = traitlets.Unicode(default_value='', help='Suffix for the names of the aggregate features in case of a collision.')
+    df_group_ = traitlets.Instance(klass=vaex.dataframe.DataFrame, allow_none=True)
+
+    def fit(self, df):
+        '''
+        Fit GroupByTransformer to the DataFrame.
+
+        :param df: A vaex DataFrame.
+        '''
+
+        if not self.agg:
+            raise ValueError('You have to specify a dict for the `agg` keyword.')
+        if len(self.by)==0:
+            raise ValueError('Please specify a value for the `by` keyword.')
+        self.df_group_ = df.groupby(by=self.by, agg=self.agg)
+
+    def transform(self, df):
+        '''
+        Transform a DataFrame with a fitted GroupByTransformer.
+
+        :param df: A vaex DataFrame.
+
+        :returns copy: a shallow copy of the DataFrame that includes the aggregated features.
+        :rtype: DataFrame
+        '''
+
+        copy = df.copy()
+        copy = copy.join(other=self.df_group_, on=self.by, how='left', rprefix=self.rprefix, rsuffix=self.rsuffix)
+        return copy
