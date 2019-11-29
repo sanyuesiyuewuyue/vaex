@@ -287,3 +287,19 @@ def test_groupby_transformer():
     assert df_test_trans.mean_y.tolist() == df_test_trans_2.mean_y.tolist()
     assert df_test_trans.x.tolist() == df_test_trans_2.x.tolist()
     assert df_test_trans.y.tolist() == df_test_trans_2.y.tolist()
+
+
+def test_groupby_transformer_serialization():
+    df_train = vaex.from_arrays(x=['dog', 'dog', 'dog', 'cat', 'cat'], y=[2, 3, 4, 10, 20])
+    df_test = vaex.from_arrays(x=['dog', 'cat', 'dog', 'mouse'], y=[5, 5, 5, 5])
+
+    group_trans = vaex.ml.GroupByTransformer(by='x', agg={'mean_y': vaex.agg.mean('y')}, rsuffix='_agg')
+    df_train_trans = group_trans.fit_transform(df_train)
+
+    state = df_train_trans.state_get()
+    df_test.state_set(state)
+
+    assert df_train_trans.mean_y.tolist() == [3.0, 3.0, 3.0, 15.0, 15.0]
+    assert df_test.mean_y.tolist() == [3.0, 15, 3.0, None]
+    assert df_test.x.tolist() == ['dog', 'cat', 'dog', 'mouse']
+    assert df_test.y.tolist() == [5, 5, 5, 5]
