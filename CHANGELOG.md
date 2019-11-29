@@ -1,4 +1,4 @@
-# vaex (unreleased)
+# vaex 2.5.0-dev (unreleased)
 
 ## vaex-ml 0.7.0-dev
    * Features
