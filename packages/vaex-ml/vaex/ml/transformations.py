@@ -632,6 +632,5 @@ class GroupByTransformer(Transformer):
         :rtype: DataFrame
         '''
 
-        copy = df.copy()
-        copy = copy.join(other=self.df_group_, on=self.by, how='left', rprefix=self.rprefix, rsuffix=self.rsuffix)
+        copy = df.join(other=self.df_group_, on=self.by, how='left', rprefix=self.rprefix, rsuffix=self.rsuffix)
         return copy
