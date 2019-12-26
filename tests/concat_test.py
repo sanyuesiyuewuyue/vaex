@@ -70,3 +70,12 @@ def test_concat_mixed_types():
     assert df[2:4].x.tolist() == [None, 'hi']
     assert df[3:4].x.tolist() == ['hi']
     assert df[3:5].x.tolist() == ['hi', 'there']
+
+def test_concat_missing_values():
+    df1 = vaex.from_arrays(x=[1, 2, 3], y=[np.nan, 'b', 'c'])
+    df2 = vaex.from_arrays(x=[4, 5, np.nan], y=['d', 'e', 'f'])
+    df = vaex.concat([df1, df2])
+
+    repr(df.head(4))
+    repr(df.tail(4))
+    assert len(df) == 6
